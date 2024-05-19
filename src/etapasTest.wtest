@@ -1,0 +1,179 @@
+import universidad.*
+import profesionales.*
+import empresa.*
+import solicitantes.*
+
+describe "test Etapas"{
+	//Universidades
+	const uniSanMartin = new Universidad(provincia = "BsAs", honorarios = 3500)
+	const uniRosario = new Universidad(provincia = "Santa Fe", honorarios = 2800)
+	const uniCorrientes = new Universidad(provincia = "Corrientes", honorarios = 4200)
+	const uniHurlingham = new Universidad(provincia = "BsAs", honorarios = 8800)
+	
+	const uniPampa = new Universidad(provincia = "La Pampa", honorarios = 1100)
+	const uniMendoza = new Universidad(provincia = "Mendoza", honorarios = 1300)
+	
+	//Profesionales
+	const juana = new ProfesionalVinculado(universidad = uniRosario)
+	const melina = new ProfesionalVinculado(universidad = uniCorrientes)
+	const rocio = new ProfesionalLibre(universidad = uniHurlingham, honorarios = 5000, 
+		provincias = #{"Santa Fe", "Cordoba", "BsAs"})
+	const luciana = new ProfesionalLibre(universidad = uniRosario, honorarios = 3200, 
+		provincias = #{"Santa Fe", "Entre Rios"})
+		
+	const silvia = new ProfesionalAsociado(universidad = uniRosario)	
+	const romina = new ProfesionalLibre(universidad = uniRosario, honorarios = 9000, 
+		provincias = #{"Santa Fe", "Entre Rios"})
+	
+	//Solicitantes
+	const persona1 = new Persona(provincia = "Santa Fe")
+	const persona2 = new Persona(provincia = "Chaco")
+	const persona3 = new Persona(provincia = "Entre Rios")
+	const institucion1 = new Institucion(unisReconocidas = [uniHurlingham, uniRosario])
+	const institucion2 = new Institucion(unisReconocidas = [uniPampa, uniMendoza])
+	const club1 = new Club(provsEnLasQueEsta = #{"La Pampa", "Entre Rios"})
+	const club2 = new Club(provsEnLasQueEsta = #{"La Pampa", "Mendoza"})
+	
+	//Empresa
+	const empresa1 = new Empresa(honorarioReferencia = 3500)
+	
+	method initialize(){
+		empresa1.agregarEmpleado(juana)
+		empresa1.agregarEmpleado(melina)
+		empresa1.agregarEmpleado(rocio)
+		empresa1.agregarEmpleado(luciana)
+	}
+	
+	//Etapa1
+	test "2 profesionales estudiaron en Rosario" {
+		assert.equals(2,empresa1.cuantosEstudiaronEn(uniRosario))
+	}
+	
+	test "1 profesional estudio en Hurlingham" {
+		assert.equals(1,empresa1.cuantosEstudiaronEn(uniHurlingham))
+	}
+	
+	test "Ningun profesional estudio en San Martin" {
+		assert.equals(0,empresa1.cuantosEstudiaronEn(uniSanMartin))
+	}
+	
+	test "Profesionales caros de la empresa" { 
+		//son melina y rocio porque sus honorarios con mayores a 3500
+		assert.equals(#{melina, rocio},empresa1.profesionalesCaros())
+	}
+	
+	test "Universidades formadoras de la empresa" {
+		assert.equals(#{uniRosario, uniCorrientes, uniHurlingham},empresa1.universidadesFormadoras())
+	}
+	
+	test "Profesional mas barato de la empresa" {
+		assert.equals(juana,empresa1.profesionalMasBarato())
+	}
+	
+	test "La empresa es de gente acotada" {
+		assert.that(empresa1.esDeGenteAcotada())
+	}
+	
+	test "La empresa no es de gente acotada" {
+		luciana.establecerProvinciaNueva("Corrientes")
+		luciana.establecerProvinciaNueva("Misiones")
+		assert.notThat(empresa1.esDeGenteAcotada())
+	}
+	
+	//Etapa2
+	test "La empresa puede satisfacer a una Persona" {
+		assert.that(empresa1.puedeSatisfacerA(persona1))
+	}
+	
+	test "La empresa no puede satisfacer a una Persona" {
+		assert.notThat(empresa1.puedeSatisfacerA(persona2))
+	}
+	
+	test "La empresa puede satisfacer a una Institucion" {
+		assert.that(empresa1.puedeSatisfacerA(institucion1))
+	}
+	
+	test "La empresa no puede satisfacer a una Institucion" {
+		assert.notThat(empresa1.puedeSatisfacerA(institucion2))
+	}
+	
+	test "La empresa puede satisfacer a un Club" {
+		assert.that(empresa1.puedeSatisfacerA(club1))
+	}
+	
+	test "La empresa no puede satisfacer a un Club" {
+		assert.notThat(empresa1.puedeSatisfacerA(club2))
+	}
+	
+	//Etapa3
+	test "Profesional Vinculado cobra 100" {
+		juana.cobrar(100)
+		assert.equals(50, uniRosario.obtenerDineroTotal())
+		assert.equals(0, juana.obtenerDinero())
+	}
+	
+	test "Profesional Asociado cobra 130" {
+		silvia.cobrar(130)
+		assert.equals(130, asocProfesionalesLitoral.obtenerDineroTotal())
+		assert.equals(0, silvia.obtenerDinero())
+	}
+	
+	test "Profesional Libre cobra 200" {
+		rocio.cobrar(150)
+		rocio.cobrar(50)
+		assert.equals(200, rocio.obtenerDinero())
+	}
+	
+	test "Profesional Libre le pasa 50 a otro Libre" {
+		rocio.cobrar(150)
+		rocio.cobrar(50)
+		rocio.pasarDineroA(luciana,50)
+		assert.equals(150, rocio.obtenerDinero())
+		assert.equals(50, luciana.obtenerDinero())
+	}
+	
+	test "Profesional Libre le pasa 50 a uno Vinculado" {
+		rocio.cobrar(150)
+		rocio.cobrar(50)
+		rocio.pasarDineroA(juana,50)
+		assert.equals(150, rocio.obtenerDinero())
+		assert.equals(0, juana.obtenerDinero())
+		assert.equals(25, uniRosario.obtenerDineroTotal())
+	}
+	
+	test "Profesional Libre le pasa 50 a uno Asociado" {
+		rocio.cobrar(150)
+		rocio.cobrar(50)
+		rocio.pasarDineroA(silvia,50)
+		assert.equals(150, rocio.obtenerDinero())
+		assert.equals(0, silvia.obtenerDinero())
+		assert.equals(50, asocProfesionalesLitoral.obtenerDineroTotal())
+	}
+
+	//Etapa4
+	test "La empresa da servicio con su empleada juana a persona1" {
+		empresa1.darServicio(persona1)
+		assert.equals(1400,uniRosario.obtenerDineroTotal())
+	}
+	
+	test "La empresa tiene 2 clientes" {
+		empresa1.darServicio(persona1)
+		empresa1.darServicio(persona3)
+		assert.equals(2,empresa1.cantidadClientes())
+	}
+	
+	test "La empresa tiene de cliente a persona3" {
+		empresa1.darServicio(persona1)
+		empresa1.darServicio(persona3)
+		assert.that(empresa1.tieneDeClienteA(persona3))
+	}
+	
+	//Desafio final
+	test "Es poco atractivo" {
+		assert.that(empresa1.esPocoAtractivo(romina))
+	}
+	
+}	
+
+
+
